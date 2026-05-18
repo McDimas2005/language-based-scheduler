@@ -1,0 +1,10 @@
+
+# Large local AI/ML artifacts
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.safetensors
+*.h5
+models/
+checkpoints/
