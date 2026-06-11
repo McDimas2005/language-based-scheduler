@@ -7,6 +7,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
+DEFAULT_GOOGLE_SCOPES = ",".join(
+    [
+        "https://www.googleapis.com/auth/calendar.events",
+        "openid",
+        "email",
+        "profile",
+    ]
+)
 
 
 class Settings(BaseSettings):
@@ -35,8 +43,8 @@ class Settings(BaseSettings):
 
     google_client_id: str | None = None
     google_client_secret: str | None = None
-    google_redirect_uri: str = "http://localhost:8000/api/auth/google/callback"
-    google_calendar_scopes: str = "https://www.googleapis.com/auth/calendar.events"
+    google_redirect_uri: str = "http://localhost:8001/api/auth/google/callback"
+    google_calendar_scopes: str = DEFAULT_GOOGLE_SCOPES
     google_token_path: Path = ROOT_DIR / "backend" / ".tokens" / "google_token.json"
 
     model_config = SettingsConfigDict(
@@ -57,4 +65,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

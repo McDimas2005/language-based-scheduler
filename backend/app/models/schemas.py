@@ -106,6 +106,8 @@ class GoogleAuthStatus(BaseModel):
     connected: bool
     configured: bool
     email: str | None = None
+    name: str | None = None
+    picture: str | None = None
     scopes: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
@@ -114,3 +116,7 @@ class GoogleAuthStartResponse(BaseModel):
     authorization_url: str
     state: str
 
+
+class GoogleLogoutResponse(BaseModel):
+    status: Literal["success"]
+    connected: bool = False

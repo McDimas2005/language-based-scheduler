@@ -1,6 +1,6 @@
 # API Reference
 
-Base URL: `http://localhost:8000`
+Base URL: `http://localhost:8001`
 
 ## GET /health
 
@@ -83,24 +83,22 @@ Returns OAuth configuration and connection status.
 
 ## GET /api/auth/google/start
 
-Returns:
-
-```json
-{
-  "authorization_url": "https://accounts.google.com/...",
-  "state": "..."
-}
-```
-
-The frontend redirects the user to `authorization_url`.
+Redirects to Google OAuth with offline access, granted-scope reuse, and `prompt=consent select_account`.
 
 ## GET /api/auth/google/callback
 
-Google OAuth redirect target. Stores the local dev token under `backend/.tokens/` and redirects back to the frontend.
+Google OAuth redirect target. Stores the local dev token under `backend/.tokens/` and redirects back to the frontend with `?auth=success` or `?auth=error&message=...`.
 
 ## POST /api/auth/google/logout
 
-Deletes the local dev OAuth token and returns updated auth status.
+Deletes the local dev OAuth token and returns:
+
+```json
+{
+  "status": "success",
+  "connected": false
+}
+```
 
 ## POST /api/calendar/create-event
 
@@ -127,4 +125,3 @@ Returns:
   "created_at": "2026-05-18T10:00:00"
 }
 ```
-

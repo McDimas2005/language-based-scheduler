@@ -54,6 +54,15 @@ export function ErrorAlert({ message }: { message: string }) {
   );
 }
 
+export function SuccessAlert({ message }: { message: string }) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+      <CheckCircle2 className="mt-0.5 shrink-0" size={18} />
+      <p>{message}</p>
+    </div>
+  );
+}
+
 export function LoadingOverlay({ label }: { label: string }) {
   return (
     <div className="absolute inset-0 z-20 grid place-items-center rounded-lg bg-paper/80 backdrop-blur">
@@ -64,4 +73,3 @@ export function LoadingOverlay({ label }: { label: string }) {
     </div>
   );
 }
-

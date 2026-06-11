@@ -1,13 +1,13 @@
 import type {
-  AuthStartResponse,
   AuthStatus,
   CalendarCreateResponse,
   EditableDraft,
   EventDraft,
   HealthResponse,
+  LogoutResponse,
 } from "../types/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8001";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -27,9 +27,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   health: () => request<HealthResponse>("/health"),
   authStatus: () => request<AuthStatus>("/api/auth/google/status"),
-  startGoogleAuth: () => request<AuthStartResponse>("/api/auth/google/start"),
+  googleAuthStartUrl: () => `${API_BASE_URL}/api/auth/google/start`,
   logoutGoogle: () =>
-    request<AuthStatus>("/api/auth/google/logout", {
+    request<LogoutResponse>("/api/auth/google/logout", {
       method: "POST",
     }),
   analyzeText: (text: string) =>
@@ -58,4 +58,3 @@ export const api = {
       }),
     }),
 };
-

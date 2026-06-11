@@ -41,13 +41,15 @@ export interface AuthStatus {
   connected: boolean;
   configured: boolean;
   email?: string | null;
+  name?: string | null;
+  picture?: string | null;
   scopes: string[];
   warnings: string[];
 }
 
-export interface AuthStartResponse {
-  authorization_url: string;
-  state: string;
+export interface LogoutResponse {
+  status: "success";
+  connected: false;
 }
 
 export interface CalendarCreateResponse {
@@ -68,4 +70,3 @@ export interface EditableDraft {
   start_datetime: string;
   end_datetime: string;
 }
-

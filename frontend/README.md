@@ -8,8 +8,8 @@ npm install
 npm run dev
 ```
 
-The app expects the backend at `http://localhost:8000`. Override with:
+The app expects the backend at `http://localhost:8001`. Override with:
 
 ```bash
-VITE_API_URL=http://localhost:8000 npm run dev
+VITE_API_URL=http://localhost:8001 npm run dev
 ```

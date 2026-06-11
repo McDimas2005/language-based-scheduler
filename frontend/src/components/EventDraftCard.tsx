@@ -8,7 +8,9 @@ export function EventDraftCard({
   editable,
   auth,
   result,
+  confirmed,
   onChange,
+  onConfirmedChange,
   onCreate,
   onConnect,
 }: {
@@ -16,7 +18,9 @@ export function EventDraftCard({
   editable: EditableDraft;
   auth: AuthStatus | null;
   result: CalendarCreateResponse | null;
+  confirmed: boolean;
   onChange: (draft: EditableDraft) => void;
+  onConfirmedChange: (confirmed: boolean) => void;
   onCreate: () => void;
   onConnect: () => void;
 }) {
@@ -81,14 +85,30 @@ export function EventDraftCard({
         </div>
       )}
 
+      <label className="mt-4 flex items-start gap-3 rounded-lg border border-ink/10 bg-paper p-4 text-sm text-ink">
+        <input
+          type="checkbox"
+          checked={confirmed}
+          onChange={(event) => onConfirmedChange(event.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-ink/20 accent-moss"
+        />
+        <span>
+          <span className="block font-semibold">I reviewed this event draft</span>
+          <span className="mt-1 block text-graphite/75">Calendar creation stays disabled until the draft is confirmed.</span>
+        </span>
+      </label>
+
       <div className="mt-5 flex flex-wrap items-center gap-3">
         {!auth?.connected ? (
-          <Button variant="secondary" onClick={onConnect}>
-            <CalendarCheck size={16} />
-            Connect Google Calendar
-          </Button>
+          <>
+            <Button variant="secondary" onClick={onConnect}>
+              <CalendarCheck size={16} />
+              Connect Google Calendar
+            </Button>
+            <p className="text-sm font-medium text-amber-800">Connect Google Calendar first.</p>
+          </>
         ) : (
-          <Button disabled={requiredMissing} onClick={onCreate}>
+          <Button disabled={requiredMissing || !confirmed} onClick={onCreate}>
             <CalendarCheck size={16} />
             Create event
           </Button>

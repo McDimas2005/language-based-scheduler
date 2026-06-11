@@ -86,17 +86,33 @@ npm install
 npm run dev
 ```
 
-The app runs at `http://localhost:5173` and expects the backend at `http://localhost:8000`.
+The app runs at `http://localhost:5173` and expects the backend at `http://localhost:8001` by default. Override the backend URL with `VITE_API_URL` if needed.
 
 ## Google Calendar Setup
 
-1. Create a Google Cloud OAuth client for a web application.
-2. Add redirect URI: `http://localhost:8000/api/auth/google/callback`.
-3. Copy `backend/.env.example` to `backend/.env`.
-4. Fill `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
-5. Start backend and frontend, then click **Connect Google Calendar**.
+This local/demo setup does not require Google Cloud billing. You only need a free Google Cloud project with the Calendar API enabled and an OAuth consent screen in Testing mode.
 
-No credentials, tokens, private keys, or client secret files should be committed.
+1. Create a Google Cloud project.
+2. Enable **Google Calendar API**.
+3. Configure the OAuth consent screen:
+   - User type: **External**
+   - Publishing status: **Testing**
+   - Add your Google account under **Test users**
+4. Add these OAuth scopes:
+   - `https://www.googleapis.com/auth/calendar.events`
+   - `openid`
+   - `email`
+   - `profile`
+5. Create an OAuth 2.0 Client ID:
+   - Application type: **Web application**
+   - Authorized JavaScript origin: `http://localhost:5173`
+   - Authorized redirect URI: `http://localhost:8001/api/auth/google/callback`
+6. Copy `backend/.env.example` to `backend/.env`.
+7. Fill `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `GOOGLE_CALENDAR_SCOPES`, and `FRONTEND_URL`.
+8. Restart backend and frontend.
+9. Test sign in, switch account, logout, draft confirmation, and event creation.
+
+Do not commit `.env`, OAuth client secrets, local token files, credentials JSON, private keys, or service account files. The redirect URI in Google Cloud must exactly match `GOOGLE_REDIRECT_URI`; if the backend runs on `8001`, do not configure Google Cloud with `8000` unless the backend is actually running on `8000`.
 
 ## Environment Variables
 
@@ -107,7 +123,9 @@ Important defaults:
 - `APP_TIMEZONE=Asia/Jakarta`
 - `WHISPER_MODEL=base`
 - `BERT_CHECKPOINT_PATH=../LEGACY/last_trained_model_checkpoint.pth`
-- `GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events`
+- `FRONTEND_URL=http://localhost:5173`
+- `GOOGLE_REDIRECT_URI=http://localhost:8001/api/auth/google/callback`
+- `GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events,openid,email,profile`
 
 ## Legacy Audio Testing
 
@@ -115,7 +133,7 @@ After installing backend dependencies and `ffmpeg`, test audio scheduling with:
 
 ```bash
 curl -F "file=@../LEGACY/ContentBased_audio_SRPreTrained_TEST.wav" \
-  http://localhost:8000/api/schedule-from-audio
+  http://localhost:8001/api/schedule-from-audio
 ```
 
 The repository also includes `LEGACY/ContentBased_audio_SRPreTrained_TEST.mp3`.
@@ -157,6 +175,7 @@ The notebook reported weighted F1 of about `0.7606`. See [docs/MODEL_CARD.md](do
 - Add faster-whisper as an optional ASR backend.
 - Add persistent event history with SQLite/PostgreSQL.
 - Add timezone selection and recurring event support.
+- Add a dedicated Google disconnect route that revokes OAuth permission in addition to clearing the local token.
 - Add Playwright E2E tests.
 - Package production deployment with HTTPS OAuth callback support.
 
@@ -167,4 +186,3 @@ Upgraded from the original college NLP AOL project by:
 - Bintang Haidar Rabbani Pradipayasa
 - Michael Dimas Chrispradipta
 - Mousa Khalil Mousa Ayesh
-
