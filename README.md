@@ -38,7 +38,7 @@ Google Calendar is optional for the first public demo. When OAuth variables are 
 
 ## Hugging Face Docker Space deployment
 
-This project is prepared for a free Hugging Face Docker Space at `TsukishimaAlan20/language-based-scheduler`. It serves the Vite frontend and FastAPI backend from one container on port `7860`.
+This project is prepared for a free Hugging Face Docker Space at `DimasAI20/language-based-scheduler`. It serves the Vite frontend and FastAPI backend from one container on port `7860`.
 
 ```bash
 python -m venv .venv
@@ -46,9 +46,9 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -U huggingface_hub
 hf auth login
-hf repos create TsukishimaAlan20/language-based-scheduler --repo-type space --space-sdk docker --public --exist-ok
-hf repos create TsukishimaAlan20/language-based-scheduler-bert-checkpoint --repo-type model --public --exist-ok
-hf upload TsukishimaAlan20/language-based-scheduler-bert-checkpoint \
+hf repos create DimasAI20/language-based-scheduler --repo-type space --space-sdk docker --public --exist-ok
+hf repos create DimasAI20/language-based-scheduler-bert-checkpoint --repo-type model --public --exist-ok
+hf upload DimasAI20/language-based-scheduler-bert-checkpoint \
   /home/mcdimas/projects/language-based-scheduler/LEGACY/last_trained_model_checkpoint.pth \
   last_trained_model_checkpoint.pth
 ```
@@ -58,7 +58,7 @@ Add a GitHub Actions secret named `HF_TOKEN` with a Hugging Face write token, th
 Recommended Space variables:
 
 ```text
-BERT_HF_REPO_ID=TsukishimaAlan20/language-based-scheduler-bert-checkpoint
+BERT_HF_REPO_ID=DimasAI20/language-based-scheduler-bert-checkpoint
 BERT_HF_FILENAME=last_trained_model_checkpoint.pth
 BERT_DOWNLOAD_FROM_HF=true
 BERT_CHECKPOINT_PATH=/app/models/last_trained_model_checkpoint.pth
@@ -67,14 +67,14 @@ SPACY_MODEL=en_core_web_sm
 LOAD_MODELS_ON_STARTUP=true
 APP_TIMEZONE=Asia/Jakarta
 ENABLE_GOOGLE_CALENDAR=false
-FRONTEND_URL=https://TsukishimaAlan20-language-based-scheduler.hf.space
+FRONTEND_URL=https://DimasAI20-language-based-scheduler.hf.space
 ```
 
 See [docs/DEPLOYMENT_HF.md](docs/DEPLOYMENT_HF.md) for the full deployment checklist.
 
 ## Large BERT checkpoint handling
 
-`LEGACY/last_trained_model_checkpoint.pth` is intentionally not committed to GitHub or copied into Docker. Upload it once to `TsukishimaAlan20/language-based-scheduler-bert-checkpoint`; the Space downloads it with `huggingface_hub` when `BERT_DOWNLOAD_FROM_HF=true`.
+`LEGACY/last_trained_model_checkpoint.pth` is intentionally not committed to GitHub or copied into Docker. Upload it once to `DimasAI20/language-based-scheduler-bert-checkpoint`; the Space downloads it with `huggingface_hub` when `BERT_DOWNLOAD_FROM_HF=true`.
 
 ## Free deployment note
 

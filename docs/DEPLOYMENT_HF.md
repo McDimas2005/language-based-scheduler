@@ -21,7 +21,7 @@ hf auth login
 ## 3. Create the Docker Space
 
 ```bash
-hf repos create TsukishimaAlan20/language-based-scheduler \
+hf repos create DimasAI20/language-based-scheduler \
   --repo-type space \
   --space-sdk docker \
   --public \
@@ -31,7 +31,7 @@ hf repos create TsukishimaAlan20/language-based-scheduler \
 ## 4. Create the BERT model artifact repo
 
 ```bash
-hf repos create TsukishimaAlan20/language-based-scheduler-bert-checkpoint \
+hf repos create DimasAI20/language-based-scheduler-bert-checkpoint \
   --repo-type model \
   --public \
   --exist-ok
@@ -40,7 +40,7 @@ hf repos create TsukishimaAlan20/language-based-scheduler-bert-checkpoint \
 ## 5. Upload the legacy BERT checkpoint
 
 ```bash
-hf upload TsukishimaAlan20/language-based-scheduler-bert-checkpoint \
+hf upload DimasAI20/language-based-scheduler-bert-checkpoint \
   /home/mcdimas/projects/language-based-scheduler/LEGACY/last_trained_model_checkpoint.pth \
   last_trained_model_checkpoint.pth
 ```
@@ -71,7 +71,7 @@ git push origin main
 The workflow `.github/workflows/sync-to-huggingface.yml` syncs this repository to:
 
 ```text
-TsukishimaAlan20/language-based-scheduler
+DimasAI20/language-based-scheduler
 ```
 
 ## 8. Configure Hugging Face Space variables
@@ -79,7 +79,7 @@ TsukishimaAlan20/language-based-scheduler
 In the Space settings, add:
 
 ```text
-BERT_HF_REPO_ID=TsukishimaAlan20/language-based-scheduler-bert-checkpoint
+BERT_HF_REPO_ID=DimasAI20/language-based-scheduler-bert-checkpoint
 BERT_HF_FILENAME=last_trained_model_checkpoint.pth
 BERT_DOWNLOAD_FROM_HF=true
 BERT_CHECKPOINT_PATH=/app/models/last_trained_model_checkpoint.pth
@@ -88,7 +88,7 @@ SPACY_MODEL=en_core_web_sm
 LOAD_MODELS_ON_STARTUP=true
 APP_TIMEZONE=Asia/Jakarta
 ENABLE_GOOGLE_CALENDAR=false
-FRONTEND_URL=https://TsukishimaAlan20-language-based-scheduler.hf.space
+FRONTEND_URL=https://DimasAI20-language-based-scheduler.hf.space
 ```
 
 No Google secrets are needed for this deployment phase.
@@ -99,7 +99,7 @@ No Google secrets are needed for this deployment phase.
 cd /home/mcdimas/projects/language-based-scheduler
 docker build -t language-based-scheduler .
 docker run --rm -p 7860:7860 \
-  -e BERT_HF_REPO_ID=TsukishimaAlan20/language-based-scheduler-bert-checkpoint \
+  -e BERT_HF_REPO_ID=DimasAI20/language-based-scheduler-bert-checkpoint \
   -e BERT_HF_FILENAME=last_trained_model_checkpoint.pth \
   -e BERT_DOWNLOAD_FROM_HF=true \
   -e BERT_CHECKPOINT_PATH=/app/models/last_trained_model_checkpoint.pth \

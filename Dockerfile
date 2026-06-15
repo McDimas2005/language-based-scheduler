@@ -19,7 +19,7 @@ ENV PYTHONUNBUFFERED=1 \
     LOAD_MODELS_ON_STARTUP=true \
     ENABLE_GOOGLE_CALENDAR=false \
     BERT_CHECKPOINT_PATH=/app/models/last_trained_model_checkpoint.pth \
-    BERT_HF_REPO_ID=TsukishimaAlan20/language-based-scheduler-bert-checkpoint \
+    BERT_HF_REPO_ID=DimasAI20/language-based-scheduler-bert-checkpoint \
     BERT_HF_FILENAME=last_trained_model_checkpoint.pth \
     BERT_DOWNLOAD_FROM_HF=true
 
