@@ -25,12 +25,27 @@ class WhisperService:
     def is_loaded(self) -> bool:
         return self._model is not None
 
+    def is_available(self) -> bool:
+        return self.is_loaded()
+
     def status_warning(self) -> str | None:
         return self._load_error
+
+    def status(self) -> dict[str, object]:
+        return {
+            "available": self.is_loaded(),
+            "model": self.settings.whisper_model,
+            "ffmpeg": self.ffmpeg_available(),
+            "error": self._load_error,
+        }
 
     def load_model(self) -> bool:
         if self._model is not None:
             return True
+        if not self.ffmpeg_available():
+            self._load_error = "ffmpeg is not installed or not available on PATH."
+            logger.warning(self._load_error)
+            return False
         try:
             import whisper
         except Exception as exc:  # pragma: no cover
@@ -92,4 +107,3 @@ class WhisperService:
     @staticmethod
     def ffmpeg_available() -> bool:
         return shutil.which("ffmpeg") is not None
-

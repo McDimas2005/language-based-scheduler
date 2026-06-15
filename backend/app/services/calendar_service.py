@@ -41,16 +41,18 @@ class CalendarService:
         self._last_state: str | None = None
 
     def is_configured(self) -> bool:
-        return bool(self.settings.google_client_id and self.settings.google_client_secret)
+        return self.settings.google_calendar_configured
 
     def auth_status(self) -> GoogleAuthStatus:
         warnings: list[str] = []
         configured = self.is_configured()
         if not configured:
-            warnings.append("Google OAuth is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.")
+            message = "Google Calendar is not configured for this deployment."
             return GoogleAuthStatus(
                 connected=False,
                 configured=False,
+                optional=True,
+                message=message,
                 scopes=self.settings.google_scopes,
                 warnings=warnings,
             )
@@ -62,6 +64,7 @@ class CalendarService:
             return GoogleAuthStatus(
                 connected=False,
                 configured=configured,
+                optional=True,
                 scopes=self.settings.google_scopes,
                 warnings=warnings,
             )
@@ -69,6 +72,7 @@ class CalendarService:
         return GoogleAuthStatus(
             connected=credentials is not None,
             configured=configured,
+            optional=True,
             email=account.get("email"),
             name=account.get("name"),
             picture=account.get("picture"),
@@ -78,7 +82,7 @@ class CalendarService:
 
     def start_auth(self) -> GoogleAuthStartResponse:
         if not self.is_configured():
-            raise GoogleCalendarConfigurationError("Google OAuth is not configured.")
+            raise GoogleCalendarConfigurationError("Google Calendar is not configured for this deployment.")
         try:
             from google_auth_oauthlib.flow import Flow
         except Exception as exc:  # pragma: no cover
@@ -98,7 +102,7 @@ class CalendarService:
         if self._last_state and state and state != self._last_state:
             raise GoogleCalendarOAuthError("Google OAuth state mismatch. Please try signing in again.")
         if not self.is_configured():
-            raise GoogleCalendarConfigurationError("Google OAuth is not configured.")
+            raise GoogleCalendarConfigurationError("Google Calendar is not configured for this deployment.")
 
         flow = self._build_flow(state=state)
         try:
@@ -115,6 +119,11 @@ class CalendarService:
         self.settings.google_token_path.unlink(missing_ok=True)
 
     def create_event(self, request: CalendarCreateRequest) -> CalendarCreateResponse:
+        if not self.is_configured():
+            raise GoogleCalendarConfigurationError(
+                "Google Calendar creation is not configured in this deployment. "
+                "Event draft generation is still available."
+            )
         credentials, _account = self._get_valid_credentials(required=True)
         try:
             from googleapiclient.discovery import build

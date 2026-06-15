@@ -1,3 +1,13 @@
+---
+title: Language Based Scheduler
+emoji: 📅
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Language Based Scheduler
 
 An AI-powered language-based scheduler that turns natural-language requests into editable Google Calendar events. This is a production-style upgrade of the original college NLP AOL notebook project, preserving the legacy Whisper, spaCy, and fine-tuned BERT pipeline.
@@ -21,6 +31,54 @@ Screenshots can be added after running the app locally:
 - Editable event draft before any calendar write
 - Google Calendar OAuth 2.0 event creation
 - Clear loading, warning, missing-field, auth, success, and error states
+
+## Deployment-first mode
+
+Google Calendar is optional for the first public demo. When OAuth variables are missing or `ENABLE_GOOGLE_CALENDAR=false`, the app still transcribes audio, analyzes text, classifies activities, and generates editable event drafts. Calendar creation is disabled with a clear message instead of failing the whole app.
+
+## Hugging Face Docker Space deployment
+
+This project is prepared for a free Hugging Face Docker Space at `TsukishimaAlan20/language-based-scheduler`. It serves the Vite frontend and FastAPI backend from one container on port `7860`.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -U huggingface_hub
+hf auth login
+hf repos create TsukishimaAlan20/language-based-scheduler --repo-type space --space-sdk docker --public --exist-ok
+hf repos create TsukishimaAlan20/language-based-scheduler-bert-checkpoint --repo-type model --public --exist-ok
+hf upload TsukishimaAlan20/language-based-scheduler-bert-checkpoint \
+  /home/mcdimas/projects/language-based-scheduler/LEGACY/last_trained_model_checkpoint.pth \
+  last_trained_model_checkpoint.pth
+```
+
+Add a GitHub Actions secret named `HF_TOKEN` with a Hugging Face write token, then push `main`. The workflow in `.github/workflows/sync-to-huggingface.yml` syncs the repository to the Docker Space.
+
+Recommended Space variables:
+
+```text
+BERT_HF_REPO_ID=TsukishimaAlan20/language-based-scheduler-bert-checkpoint
+BERT_HF_FILENAME=last_trained_model_checkpoint.pth
+BERT_DOWNLOAD_FROM_HF=true
+BERT_CHECKPOINT_PATH=/app/models/last_trained_model_checkpoint.pth
+WHISPER_MODEL=base
+SPACY_MODEL=en_core_web_sm
+LOAD_MODELS_ON_STARTUP=true
+APP_TIMEZONE=Asia/Jakarta
+ENABLE_GOOGLE_CALENDAR=false
+FRONTEND_URL=https://TsukishimaAlan20-language-based-scheduler.hf.space
+```
+
+See [docs/DEPLOYMENT_HF.md](docs/DEPLOYMENT_HF.md) for the full deployment checklist.
+
+## Large BERT checkpoint handling
+
+`LEGACY/last_trained_model_checkpoint.pth` is intentionally not committed to GitHub or copied into Docker. Upload it once to `TsukishimaAlan20/language-based-scheduler-bert-checkpoint`; the Space downloads it with `huggingface_hub` when `BERT_DOWNLOAD_FROM_HF=true`.
+
+## Free deployment note
+
+This deployment-first setup uses a Hugging Face free CPU Docker Space. No paid Google or cloud billing is required for the public demo while Calendar creation is disabled.
 
 ## AI/NLP Pipeline
 
@@ -166,8 +224,10 @@ The notebook reported weighted F1 of about `0.7606`. See [docs/MODEL_CARD.md](do
 
 - Whisper requires local model download and `ffmpeg`.
 - `en_core_web_trf` is large and must be installed separately.
-- The BERT checkpoint is large and local; model inference is unavailable until PyTorch/transformers dependencies are installed.
-- Google Calendar writes require user OAuth setup.
+- Whisper base and BERT run on CPU, so first load and transcription may be slow.
+- Hugging Face free Spaces may sleep and restart after inactivity.
+- The BERT checkpoint is large and must be uploaded to the separate Hugging Face model artifact repo before the Space can load it.
+- Google Calendar creation is disabled unless OAuth HTTPS callback configuration is added later.
 - Date/time extraction is conservative and intentionally asks users to confirm uncertain drafts.
 
 ## Future Improvements

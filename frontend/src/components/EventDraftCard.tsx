@@ -99,7 +99,11 @@ export function EventDraftCard({
       </label>
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
-        {!auth?.connected ? (
+        {!auth?.configured ? (
+          <p className="rounded-lg bg-mint px-4 py-3 text-sm font-medium text-moss">
+            Google Calendar creation is disabled in this demo. You can still generate and review event drafts.
+          </p>
+        ) : !auth.connected ? (
           <>
             <Button variant="secondary" onClick={onConnect}>
               <CalendarCheck size={16} />

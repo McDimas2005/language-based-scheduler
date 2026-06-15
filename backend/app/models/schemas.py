@@ -10,19 +10,46 @@ class ErrorResponse(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class SpacyHealth(BaseModel):
+    available: bool
+    model: str | None = None
+    error: str | None = None
+
+
+class BertHealth(BaseModel):
+    available: bool
+    checkpoint_path: str
+    labels: list[str]
+    error: str | None = None
+
+
+class WhisperHealth(BaseModel):
+    available: bool
+    model: str
+    ffmpeg: bool
+    error: str | None = None
+
+
 class ModelStatus(BaseModel):
-    whisper_available: bool
-    bert_available: bool
-    spacy_available: bool
+    spacy: SpacyHealth
+    bert: BertHealth
+    whisper: WhisperHealth
     warnings: list[str] = Field(default_factory=list)
 
 
 class HealthResponse(BaseModel):
     status: Literal["ok"]
-    app: str
     version: str
-    timezone: str
+    environment: str
     models: ModelStatus
+    calendar: "CalendarHealth"
+
+
+class CalendarHealth(BaseModel):
+    configured: bool
+    connected: bool
+    optional: bool = True
+    message: str | None = None
 
 
 class TextAnalyzeRequest(BaseModel):
@@ -105,6 +132,8 @@ class CalendarCreateResponse(BaseModel):
 class GoogleAuthStatus(BaseModel):
     connected: bool
     configured: bool
+    optional: bool = True
+    message: str | None = None
     email: str | None = None
     name: str | None = None
     picture: str | None = None

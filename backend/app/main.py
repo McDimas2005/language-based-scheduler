@@ -1,8 +1,11 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes_calendar import router as calendar_router
 from app.api.routes_health import router as health_router
@@ -54,6 +57,7 @@ def create_app() -> FastAPI:
         description="AI-powered natural-language scheduler using Whisper, spaCy, BERT, and Google Calendar.",
     )
     app.state.services = build_services(settings)
+    app.state.static_dir = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
     app.add_middleware(
         CORSMiddleware,
@@ -74,8 +78,35 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(schedule_router)
     app.include_router(calendar_router)
+
+    @app.on_event("startup")
+    async def load_models_on_startup() -> None:
+        if not settings.load_models_on_startup:
+            logger.info("LOAD_MODELS_ON_STARTUP is false; models will load lazily.")
+            return
+        logger.info("Preloading AI models for deployment health checks.")
+        services = app.state.services
+        services.extraction_service.is_spacy_available()
+        services.classifier.load_model()
+        services.whisper_service.load_model()
+
+    static_dir = app.state.static_dir
+    assets_dir = static_dir / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend(full_path: str):
+        if not static_dir.exists():
+            return JSONResponse(
+                status_code=404,
+                content={"detail": "Frontend build is not available. Run npm run build first."},
+            )
+        requested_path = (static_dir / full_path).resolve()
+        if requested_path.is_file() and static_dir.resolve() in requested_path.parents:
+            return FileResponse(requested_path)
+        return FileResponse(static_dir / "index.html")
     return app
 
 
 app = create_app()
-

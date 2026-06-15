@@ -20,6 +20,7 @@ DEFAULT_GOOGLE_SCOPES = ",".join(
 class Settings(BaseSettings):
     app_name: str = "Language Based Scheduler"
     app_version: str = "1.0.0"
+    environment: str = "local"
     app_timezone: str = "Asia/Jakarta"
     default_duration_minutes: int = 60
     frontend_url: str = "http://localhost:5173"
@@ -28,6 +29,7 @@ class Settings(BaseSettings):
     )
 
     max_audio_size_mb: int = 25
+    load_models_on_startup: bool = False
     whisper_model: str = "base"
     whisper_language: str | None = "en"
 
@@ -36,11 +38,15 @@ class Settings(BaseSettings):
 
     bert_base_model: str = "bert-base-uncased"
     bert_checkpoint_path: Path = ROOT_DIR / "LEGACY" / "last_trained_model_checkpoint.pth"
+    bert_hf_repo_id: str | None = None
+    bert_hf_filename: str = "last_trained_model_checkpoint.pth"
+    bert_download_from_hf: bool = False
     bert_max_length: int = 128
     bert_labels: List[str] = Field(
         default_factory=lambda: ["career", "education", "health", "hobby", "social"]
     )
 
+    enable_google_calendar: bool = True
     google_client_id: str | None = None
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:8001/api/auth/google/callback"
@@ -60,6 +66,10 @@ class Settings(BaseSettings):
     @property
     def google_scopes(self) -> list[str]:
         return [scope.strip() for scope in self.google_calendar_scopes.split(",") if scope.strip()]
+
+    @property
+    def google_calendar_configured(self) -> bool:
+        return bool(self.enable_google_calendar and self.google_client_id and self.google_client_secret)
 
 
 @lru_cache

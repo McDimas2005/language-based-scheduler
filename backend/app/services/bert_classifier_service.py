@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Any
+import shutil
 
 from app.core.config import Settings
 from app.core.logging import get_logger
@@ -30,16 +32,27 @@ class BertActivityClassifier:
     def is_loaded(self) -> bool:
         return self.state.loaded
 
+    def is_available(self) -> bool:
+        return self.is_loaded()
+
     def status_warning(self) -> str | None:
         return self.state.error
+
+    def status(self) -> dict[str, Any]:
+        return {
+            "available": self.is_loaded(),
+            "checkpoint_path": str(self.settings.bert_checkpoint_path),
+            "labels": self.labels,
+            "error": self.state.error,
+        }
 
     def load_model(self) -> bool:
         if self.state.loaded:
             return True
 
-        checkpoint_path = Path(self.settings.bert_checkpoint_path)
+        checkpoint_path = self._ensure_checkpoint()
         if not checkpoint_path.exists():
-            self.state.error = f"BERT checkpoint not found at {checkpoint_path}."
+            self.state.error = self.state.error or f"BERT checkpoint not found at {checkpoint_path}."
             logger.warning(self.state.error)
             return False
 
@@ -52,7 +65,7 @@ class BertActivityClassifier:
             return False
 
         try:  # pragma: no cover - exercised when ML deps are installed
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.device = torch.device("cpu")
             self.tokenizer = BertTokenizer.from_pretrained(self.settings.bert_base_model)
             self.model = BertForSequenceClassification.from_pretrained(
                 self.settings.bert_base_model,
@@ -65,7 +78,7 @@ class BertActivityClassifier:
             self.model.to(self.device)
             self.model.eval()
             self.state = ClassifierLoadState(loaded=True)
-            logger.info("Loaded BERT activity classifier from %s", checkpoint_path)
+            logger.info("Loaded BERT activity classifier from %s with labels %s", checkpoint_path, self.labels)
             return True
         except Exception as exc:
             self.state.error = f"Could not load BERT checkpoint: {exc}"
@@ -73,6 +86,50 @@ class BertActivityClassifier:
             self.model = None
             self.tokenizer = None
             return False
+
+    def _ensure_checkpoint(self) -> Path:
+        checkpoint_path = Path(self.settings.bert_checkpoint_path)
+        if checkpoint_path.exists():
+            logger.info("BERT checkpoint exists at %s", checkpoint_path)
+            return checkpoint_path
+
+        if not self.settings.bert_download_from_hf:
+            return checkpoint_path
+
+        if not self.settings.bert_hf_repo_id:
+            self.state.error = "BERT_HF_REPO_ID is required when BERT_DOWNLOAD_FROM_HF=true."
+            logger.warning(self.state.error)
+            return checkpoint_path
+
+        try:
+            from huggingface_hub import hf_hub_download
+        except Exception as exc:  # pragma: no cover - depends on optional dep
+            self.state.error = f"huggingface_hub is not installed: {exc}"
+            logger.warning(self.state.error)
+            return checkpoint_path
+
+        try:  # pragma: no cover - depends on network/cache
+            logger.info(
+                "Downloading BERT checkpoint %s from Hugging Face repo %s",
+                self.settings.bert_hf_filename,
+                self.settings.bert_hf_repo_id,
+            )
+            downloaded = Path(
+                hf_hub_download(
+                    repo_id=self.settings.bert_hf_repo_id,
+                    filename=self.settings.bert_hf_filename,
+                    token=os.environ.get("HF_TOKEN"),
+                )
+            )
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+            if downloaded.resolve() != checkpoint_path.resolve():
+                shutil.copyfile(downloaded, checkpoint_path)
+            logger.info("BERT checkpoint is ready at %s", checkpoint_path)
+        except Exception as exc:
+            self.state.error = f"Could not download BERT checkpoint from Hugging Face: {exc}"
+            logger.warning(self.state.error)
+
+        return checkpoint_path
 
     def predict(self, text: str) -> ClassificationResult:
         if not self.load_model():
@@ -125,4 +182,3 @@ class BertActivityClassifier:
         if not any(key.startswith("module.") for key in state_dict):
             return state_dict
         return {key.removeprefix("module."): value for key, value in state_dict.items()}
-

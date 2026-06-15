@@ -31,9 +31,21 @@ class ExtractionService:
     def is_spacy_available(self) -> bool:
         return self._load_spacy() is not None
 
+    def spacy_model_name(self) -> str | None:
+        self._load_spacy()
+        return self._spacy_model_name
+
     def spacy_warning(self) -> str | None:
         self._load_spacy()
         return self._spacy_error
+
+    def spacy_status(self) -> dict[str, str | bool | None]:
+        self._load_spacy()
+        return {
+            "available": self._nlp is not None,
+            "model": self._spacy_model_name,
+            "error": self._spacy_error if self._nlp is None else None,
+        }
 
     def extract(self, text: str, timezone: str | None = None) -> ExtractionResult:
         tz = timezone or self.settings.app_timezone
@@ -120,7 +132,7 @@ class ExtractionService:
 
         self._spacy_error = (
             f"spaCy model {self.settings.spacy_model} is unavailable. "
-            "Install it with: python -m spacy download en_core_web_trf."
+            f"Install it with: python -m spacy download {self.settings.spacy_model}."
         )
         logger.warning(self._spacy_error)
         return None

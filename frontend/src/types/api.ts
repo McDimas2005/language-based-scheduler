@@ -26,20 +26,41 @@ export interface EventDraft {
 
 export interface HealthResponse {
   status: "ok";
-  app: string;
   version: string;
-  timezone: string;
+  environment: string;
   models: {
-    whisper_available: boolean;
-    bert_available: boolean;
-    spacy_available: boolean;
+    spacy: {
+      available: boolean;
+      model?: string | null;
+      error?: string | null;
+    };
+    bert: {
+      available: boolean;
+      checkpoint_path: string;
+      labels: string[];
+      error?: string | null;
+    };
+    whisper: {
+      available: boolean;
+      model: string;
+      ffmpeg: boolean;
+      error?: string | null;
+    };
     warnings: string[];
+  };
+  calendar: {
+    configured: boolean;
+    connected: boolean;
+    optional: boolean;
+    message?: string | null;
   };
 }
 
 export interface AuthStatus {
   connected: boolean;
   configured: boolean;
+  optional: boolean;
+  message?: string | null;
   email?: string | null;
   name?: string | null;
   picture?: string | null;

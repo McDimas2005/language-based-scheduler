@@ -101,6 +101,10 @@ export function SchedulerWorkspace() {
 
   async function createEvent() {
     if (!editable || !draftConfirmed) return;
+    if (!auth?.configured) {
+      setError("Google Calendar creation is disabled in this demo. You can still generate and review event drafts.");
+      return;
+    }
     if (!auth?.connected) {
       setError("Connect Google Calendar first.");
       return;
@@ -124,12 +128,17 @@ export function SchedulerWorkspace() {
       <div className="mb-6 flex flex-wrap gap-2">
         {health && (
           <>
-            <StatusPill ok={health.models.spacy_available} label="spaCy" />
-            <StatusPill ok={health.models.bert_available} label="BERT" />
-            <StatusPill ok={health.models.whisper_available} label="Whisper" />
+            <StatusPill ok={health.models.spacy.available} label={`spaCy${health.models.spacy.model ? ` ${health.models.spacy.model}` : ""}`} />
+            <StatusPill ok={health.models.bert.available} label="BERT" />
+            <StatusPill ok={health.models.whisper.available} label={`Whisper ${health.models.whisper.model}`} />
           </>
         )}
-        {auth && <StatusPill ok={auth.connected} label={auth.connected ? "Calendar connected" : "Calendar not connected"} />}
+        {auth && (
+          <StatusPill
+            ok={auth.connected || !auth.configured}
+            label={auth.connected ? "Calendar connected" : auth.configured ? "Calendar not connected" : "Calendar optional"}
+          />
+        )}
       </div>
 
       <GoogleAccountCard auth={auth} onConnect={connectGoogle} onSwitch={connectGoogle} onLogout={logoutGoogle} />
@@ -234,11 +243,16 @@ function GoogleAccountCard({
   }
 
   if (!auth.connected) {
+    const message =
+      auth.message ||
+      (auth.configured
+        ? "Connect Google Calendar before creating events."
+        : "Google Calendar creation is disabled in this demo. You can still generate and review event drafts.");
     return (
       <div className="mb-6 flex flex-col gap-4 rounded-lg border border-ink/10 bg-white p-4 shadow-line sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-bold text-ink">Google Calendar</p>
-          <p className="mt-1 text-sm text-graphite/75">Connect Google Calendar before creating events.</p>
+          <p className="mt-1 text-sm text-graphite/75">{message}</p>
           {auth.warnings.map((warning) => (
             <p key={warning} className="mt-2 text-sm font-medium text-amber-800">
               {warning}
@@ -247,7 +261,7 @@ function GoogleAccountCard({
         </div>
         <Button onClick={onConnect} disabled={!auth.configured}>
           <CalendarCheck size={16} />
-          Sign in with Google
+          {auth.configured ? "Sign in with Google" : "Calendar not configured"}
         </Button>
       </div>
     );

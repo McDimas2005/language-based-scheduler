@@ -28,7 +28,7 @@ export function App() {
             <motion.div initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
               <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-bold text-moss shadow-line">
                 <Sparkles size={14} />
-                Whisper + spaCy + BERT + Google Calendar
+                Whisper + spaCy + BERT + optional Calendar
               </div>
               <h1 className="max-w-3xl text-5xl font-black leading-[1.02] text-ink sm:text-6xl">
                 Language Based Scheduler
@@ -64,7 +64,7 @@ export function App() {
                   ["Request", "Schedule a meeting with my lecturer tomorrow at 10 AM"],
                   ["Extraction", "Meeting with my lecturer · Tomorrow · 10:00"],
                   ["Classification", "education · 87% confidence"],
-                  ["Calendar", "Waiting for user confirmation"],
+                  ["Calendar", "Optional after user confirmation"],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-lg bg-paper p-4 shadow-line">
                     <p className="text-xs font-bold uppercase text-moss">{label}</p>
@@ -92,7 +92,7 @@ export function App() {
               ["Whisper", "Speech-to-text with the legacy base model family."],
               ["spaCy", "NER and rule-assisted extraction for date, time, and activity phrases."],
               ["BERT", "Fine-tuned bert-base-uncased activity classifier loaded from the legacy checkpoint."],
-              ["Google Calendar", "OAuth-based event creation after explicit user confirmation."],
+              ["Google Calendar", "Optional OAuth-based event creation after explicit user confirmation."],
             ].map(([title, body]) => (
               <div key={title} className="rounded-lg bg-white p-5 shadow-line">
                 <h3 className="font-bold text-ink">{title}</h3>
