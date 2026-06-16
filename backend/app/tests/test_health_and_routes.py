@@ -49,6 +49,7 @@ async def test_invalid_audio_upload_rejected():
 
 def make_calendar_settings(tmp_path):
     return Settings(
+        enable_google_calendar=True,
         google_client_id="client-id.apps.googleusercontent.com",
         google_client_secret="client-secret",
         google_redirect_uri="http://localhost:8001/api/auth/google/callback",
