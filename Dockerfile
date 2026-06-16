@@ -35,8 +35,8 @@ RUN useradd --create-home --shell /bin/bash appuser
 
 WORKDIR /app/backend
 COPY backend/requirements.txt ./requirements.txt
-RUN python -m pip install --upgrade "pip<26" "setuptools==80.9.0" wheel \
-    && PIP_NO_BUILD_ISOLATION=1 python -m pip install -r requirements.txt \
+RUN python -m pip install --upgrade "pip<26" "setuptools==80.9.0" "wheel==0.45.1" \
+    && python -m pip install --no-build-isolation --no-cache-dir -r requirements.txt \
     && python -m spacy download en_core_web_sm \
     && python -c "import whisper; whisper.load_model('base')"
 
