@@ -10,52 +10,333 @@ pinned: false
 
 # Language Based Scheduler
 
-An AI-powered language-based scheduler that turns natural-language requests into editable Google Calendar events. This is a production-style upgrade of the original college NLP AOL notebook project, preserving the legacy Whisper, spaCy, and fine-tuned BERT pipeline.
+A full-stack AI scheduler that turns natural language and speech into editable Google Calendar event drafts.
 
-## Demo Screenshots
+[![Python](https://img.shields.io/badge/Python-3.12-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF)](https://vite.dev/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.5-EE4C2C)](https://pytorch.org/)
+[![Transformers](https://img.shields.io/badge/Transformers-4.47-FFD21E)](https://huggingface.co/docs/transformers)
+[![Docker](https://img.shields.io/badge/Docker-Hugging%20Face%20Space-2496ED)](https://huggingface.co/spaces)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Screenshots can be added after running the app locally:
+## Live Project
 
-- Landing and scheduler workspace
-- Event draft preview
-- Google Calendar success state
+| Resource | Link |
+| --- | --- |
+| Live app | [Hugging Face Space](https://huggingface.co/spaces/DimasAI20/language-based-scheduler) |
+| BERT checkpoint | [DimasAI20/language-based-scheduler-bert-checkpoint](https://huggingface.co/DimasAI20/language-based-scheduler-bert-checkpoint) |
+| GitHub remote | `git@github.com:McDimas2005/language-based-scheduler.git` |
 
-## Key Features
+The app is deployed as a Hugging Face Docker Space. First requests can be slower because free Spaces may cold start and AI models may need to load into memory.
 
-- Browser voice recording with playback before analysis
-- Audio upload for `.wav`, `.mp3`, `.m4a`, `.ogg`, and `.webm`
-- Manual natural-language text input
-- Whisper transcription using the legacy `base` model family
-- spaCy and rule-assisted extraction for activity, date, time, and duration
-- Fine-tuned BERT activity classification from `LEGACY/last_trained_model_checkpoint.pth`
-- Editable event draft before any calendar write
-- Google Calendar OAuth 2.0 event creation
-- Clear loading, warning, missing-field, auth, success, and error states
+## Overview
 
-## Deployment-first mode
+Language Based Scheduler began as a notebook-based college NLP AOL project for creating calendar events from voice input and classifying activity type. This upgraded version turns the original idea into a portfolio-ready web application with a FastAPI backend, React/TypeScript frontend, Docker deployment, AI model health checks, and optional Google Calendar OAuth.
 
-Google Calendar is optional for the first public demo. When OAuth variables are missing or `ENABLE_GOOGLE_CALENDAR=false`, the app still transcribes audio, analyzes text, classifies activities, and generates editable event drafts. Calendar creation is disabled with a clear message instead of failing the whole app.
+The core workflow is deliberately review-first: the app converts text or audio into a structured event draft, lets the user edit the title/date/time/duration/category/description, and only creates a Google Calendar event after explicit confirmation.
 
-## Hugging Face Docker Space deployment
+## Features
 
-This project is prepared for a free Hugging Face Docker Space at `DimasAI20/language-based-scheduler`. It serves the Vite frontend and FastAPI backend from one container on port `7860`.
+- Natural-language text scheduling.
+- Audio scheduling from uploaded `.wav`, `.mp3`, `.m4a`, `.ogg`, and `.webm` files.
+- Browser microphone recording with playback before analysis.
+- Whisper `base` speech-to-text through `openai-whisper`.
+- spaCy entity extraction with rule-based date/time/duration fallback parsing.
+- Fine-tuned `bert-base-uncased` activity classification.
+- Five activity labels: `career`, `education`, `health`, `hobby`, `social`.
+- Editable event draft preview with missing-field and warning states.
+- Review checkbox before Calendar creation is enabled.
+- Google OAuth sign-in, account switching via `prompt=consent select_account`, and logout.
+- Google Calendar event creation when OAuth is configured and connected.
+- Calendar-optional demo mode for public deployments.
+- Model health response for spaCy, BERT, Whisper, and Calendar configuration.
+- Responsive React UI with typed API contracts.
+- Single-container Docker deployment serving both frontend and backend on port `7860`.
+
+## AI/NLP Pipeline
+
+```mermaid
+flowchart LR
+    A[Text, Upload, or Browser Recording] --> B{Audio?}
+    B -->|Yes| C[Whisper Speech-to-Text]
+    B -->|No| D[Text Cleaning]
+    C --> D
+    D --> E[spaCy + Rule-Based Extraction]
+    E --> F[Fine-Tuned BERT Classifier]
+    F --> G[Editable Event Draft]
+    G --> H[User Review + Confirmation]
+    H --> I[Google Calendar API]
+```
+
+| Stage | What it does |
+| --- | --- |
+| Whisper | Transcribes uploaded or recorded audio into text. |
+| Text cleaning | Normalizes the scheduling request before extraction. |
+| spaCy + rules | Extracts candidate activity title, date, time, duration, and missing fields. |
+| BERT classifier | Predicts one of five activity categories from the recovered legacy checkpoint. |
+| Draft review | Lets the user correct fields before any external write. |
+| Calendar integration | Creates a primary Google Calendar event only after OAuth and user confirmation. |
+
+## Tech Stack
+
+| Layer | Technology | Purpose |
+| --- | --- | --- |
+| Frontend | React 19, TypeScript, Vite | Scheduler workspace, typed API calls, production build. |
+| UI | Tailwind CSS, Framer Motion, lucide-react | Responsive layout, motion, icons, status states. |
+| Backend | FastAPI, Pydantic, Uvicorn | API routes, validation, service orchestration. |
+| NLP/ML | openai-whisper, spaCy, PyTorch, Transformers, BERT | Speech recognition, extraction, classification. |
+| Calendar | Google Calendar API, OAuth 2.0 | User sign-in and event creation. |
+| Deployment | Docker, Hugging Face Spaces | Single public container on port `7860`. |
+| Testing | pytest, FastAPI ASGI tests, TypeScript build | Backend route/service checks and frontend production build validation. |
+
+## Architecture
+
+```text
+frontend/   React + TypeScript scheduler workspace
+backend/    FastAPI API, AI services, Google Calendar integration, tests
+docs/       Architecture notes, API reference, model card, deployment guide
+LEGACY/     Original notebooks, project PDF, audio samples, ignored local checkpoint
+scripts/    Model verification and checkpoint download helpers
+```
+
+In Docker deployment, Vite builds the frontend first. The final Python container installs the backend, downloads `en_core_web_sm`, pre-caches Whisper `base`, copies the frontend build into `/app/frontend/dist`, and FastAPI serves both:
+
+- API routes such as `/api/analyze-text` and `/health`.
+- Static frontend assets and React SPA fallback routes.
+
+The large BERT checkpoint is not committed to GitHub or copied into the Docker build context. It is stored in a separate Hugging Face model repository and downloaded by the backend when configured.
+
+## Screenshots
+
+> Screenshots will be added after final UI capture from the running Hugging Face Space.
+
+## Local Development
+
+### Prerequisites
+
+- Python 3.12 recommended.
+- Node.js 20+ recommended.
+- `ffmpeg` available on the system path.
+- Git.
+- Docker optional for deployment parity.
+
+On Debian/Ubuntu:
 
 ```bash
+sudo apt-get update
+sudo apt-get install ffmpeg
+```
+
+### Backend
+
+```bash
+cd backend
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip
+python -m pip install --upgrade "pip<26" "setuptools==80.9.0" "wheel==0.45.1"
+python -m pip install --no-build-isolation -r requirements.txt
+python -m spacy download en_core_web_sm
+uvicorn app.main:app --host localhost --port 8001 --reload
+```
+
+Backend URLs:
+
+- API base: `http://localhost:8001`
+- API docs: `http://localhost:8001/docs`
+- Health: `http://localhost:8001/health`
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend URL:
+
+- `http://localhost:5173`
+
+During Vite development, the frontend defaults to `http://localhost:8001` for API calls unless `VITE_API_URL` is set.
+
+## Environment Variables
+
+Copy the example file and fill only the values needed for your mode:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Supported backend variables include:
+
+```env
+ENVIRONMENT=local
+APP_TIMEZONE=Asia/Jakarta
+FRONTEND_URL=http://localhost:5173
+
+ENABLE_GOOGLE_CALENDAR=false
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:8001/api/auth/google/callback
+GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events,openid,email,profile
+
+LOAD_MODELS_ON_STARTUP=false
+SPACY_MODEL=en_core_web_sm
+WHISPER_MODEL=base
+WHISPER_LANGUAGE=en
+
+BERT_CHECKPOINT_PATH=../LEGACY/last_trained_model_checkpoint.pth
+BERT_HF_REPO_ID=DimasAI20/language-based-scheduler-bert-checkpoint
+BERT_HF_FILENAME=last_trained_model_checkpoint.pth
+BERT_DOWNLOAD_FROM_HF=false
+```
+
+Never commit `backend/.env`, OAuth client secrets, access/refresh tokens, private keys, service account files, or local model checkpoints.
+
+## Google Calendar OAuth Setup
+
+Google Calendar is optional. The public demo can generate and review event drafts without Calendar credentials. To enable Calendar creation locally:
+
+1. Create a free Google Cloud project.
+2. Enable **Google Calendar API**.
+3. Configure the OAuth consent screen:
+   - User type: **External**
+   - Publishing status: **Testing**
+   - Add your Gmail account under **Test users**
+4. Add these scopes:
+   - `https://www.googleapis.com/auth/calendar.events`
+   - `openid`
+   - `email`
+   - `profile`
+5. Create an OAuth 2.0 Client ID:
+   - Application type: **Web application**
+   - Authorized JavaScript origin: `http://localhost:5173`
+   - Authorized redirect URI: `http://localhost:8001/api/auth/google/callback`
+6. Set `ENABLE_GOOGLE_CALENDAR=true` in `backend/.env`.
+7. Copy the OAuth Client ID and Client Secret into `backend/.env`.
+8. Restart backend and frontend.
+9. Test sign-in, account switching, logout, draft confirmation, and event creation.
+
+The redirect URI must exactly match `GOOGLE_REDIRECT_URI`. If the backend runs on port `8001`, do not configure Google Cloud with port `8000`.
+
+No Google Cloud billing is required for local/demo testing.
+
+## BERT Checkpoint
+
+The fine-tuned BERT checkpoint is large and is intentionally stored outside GitHub.
+
+| Item | Value |
+| --- | --- |
+| Model repo | [DimasAI20/language-based-scheduler-bert-checkpoint](https://huggingface.co/DimasAI20/language-based-scheduler-bert-checkpoint) |
+| File | `last_trained_model_checkpoint.pth` |
+| Base model | `bert-base-uncased` |
+| Inference labels | `career`, `education`, `health`, `hobby`, `social` |
+
+Development can load the checkpoint from a local path:
+
+```env
+BERT_CHECKPOINT_PATH=../LEGACY/last_trained_model_checkpoint.pth
+BERT_DOWNLOAD_FROM_HF=false
+```
+
+Deployment can download it from Hugging Face Hub:
+
+```env
+BERT_HF_REPO_ID=DimasAI20/language-based-scheduler-bert-checkpoint
+BERT_HF_FILENAME=last_trained_model_checkpoint.pth
+BERT_DOWNLOAD_FROM_HF=true
+BERT_CHECKPOINT_PATH=/app/models/last_trained_model_checkpoint.pth
+```
+
+`HF_TOKEN` is only needed if the checkpoint repository is private. Do not commit the checkpoint to GitHub.
+
+## API Overview
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Returns app version, environment, model availability, and Calendar status. |
+| `POST` | `/api/transcribe` | Transcribes an uploaded audio file. |
+| `POST` | `/api/analyze-text` | Converts text into an editable event draft. |
+| `POST` | `/api/schedule-from-audio` | Transcribes audio, then returns an event draft. |
+| `GET` | `/api/auth/google/status` | Reports OAuth configuration and connection state. |
+| `GET` | `/api/auth/google/start` | Starts Google OAuth sign-in. |
+| `GET` | `/api/auth/google/callback` | Handles Google OAuth callback and redirects to the frontend. |
+| `POST` | `/api/auth/google/logout` | Clears the local OAuth token. |
+| `POST` | `/api/calendar/create-event` | Creates a Calendar event from a confirmed draft when connected. |
+
+See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for request and response examples.
+
+## Testing
+
+```bash
+python -m compileall backend/app
+cd backend && pytest
+cd ../frontend && npm run build
+```
+
+The backend test suite uses the FastAPI ASGI app and service-level checks. If a local `.env` disables Google Calendar, Calendar-specific tests should set their own explicit settings rather than relying on local environment state.
+
+## Docker and Hugging Face Spaces
+
+The root [Dockerfile](Dockerfile) is the production deployment path for Hugging Face Spaces:
+
+- Builds the React/Vite frontend.
+- Installs Python backend dependencies with pinned packaging tools for Whisper compatibility.
+- Installs `en_core_web_sm`.
+- Pre-caches Whisper `base`.
+- Runs FastAPI with Uvicorn on `${PORT:-7860}`.
+
+Local Docker run:
+
+```bash
+docker build -t language-based-scheduler .
+docker run --rm -p 7860:7860 \
+  -e BERT_HF_REPO_ID=DimasAI20/language-based-scheduler-bert-checkpoint \
+  -e BERT_HF_FILENAME=last_trained_model_checkpoint.pth \
+  -e BERT_DOWNLOAD_FROM_HF=true \
+  -e BERT_CHECKPOINT_PATH=/app/models/last_trained_model_checkpoint.pth \
+  -e WHISPER_MODEL=base \
+  -e SPACY_MODEL=en_core_web_sm \
+  -e LOAD_MODELS_ON_STARTUP=true \
+  -e ENABLE_GOOGLE_CALENDAR=false \
+  language-based-scheduler
+```
+
+Open:
+
+- `http://localhost:7860`
+- `http://localhost:7860/health`
+
+For Hugging Face setup details, see [docs/DEPLOYMENT_HF.md](docs/DEPLOYMENT_HF.md).
+
+### Hugging Face deployment checklist
+
+```bash
 python -m pip install -U huggingface_hub
 hf auth login
-hf repos create DimasAI20/language-based-scheduler --repo-type space --space-sdk docker --public --exist-ok
-hf repos create DimasAI20/language-based-scheduler-bert-checkpoint --repo-type model --public --exist-ok
+
+hf repos create DimasAI20/language-based-scheduler \
+  --repo-type space \
+  --space-sdk docker \
+  --public \
+  --exist-ok
+
+hf repos create DimasAI20/language-based-scheduler-bert-checkpoint \
+  --repo-type model \
+  --public \
+  --exist-ok
+
 hf upload DimasAI20/language-based-scheduler-bert-checkpoint \
-  /home/mcdimas/projects/language-based-scheduler/LEGACY/last_trained_model_checkpoint.pth \
+  <path-to-local-checkpoint>/last_trained_model_checkpoint.pth \
   last_trained_model_checkpoint.pth
 ```
 
-Add a GitHub Actions secret named `HF_TOKEN` with a Hugging Face write token, then push `main`. The workflow in `.github/workflows/sync-to-huggingface.yml` syncs the repository to the Docker Space.
+The GitHub Actions workflow at `.github/workflows/sync-to-huggingface.yml` syncs `main` to the Docker Space. Add a GitHub Actions secret named `HF_TOKEN` with a Hugging Face write token before relying on the workflow.
 
-Recommended Space variables:
+Recommended Hugging Face Space variables:
 
 ```text
 BERT_HF_REPO_ID=DimasAI20/language-based-scheduler-bert-checkpoint
@@ -70,179 +351,62 @@ ENABLE_GOOGLE_CALENDAR=false
 FRONTEND_URL=https://DimasAI20-language-based-scheduler.hf.space
 ```
 
-See [docs/DEPLOYMENT_HF.md](docs/DEPLOYMENT_HF.md) for the full deployment checklist.
+Use Hugging Face or GitHub secret storage for private values such as `HF_TOKEN`, `GOOGLE_CLIENT_SECRET`, or any OAuth token material.
 
-## Large BERT checkpoint handling
+## Legacy Background
 
-`LEGACY/last_trained_model_checkpoint.pth` is intentionally not committed to GitHub or copied into Docker. Upload it once to `DimasAI20/language-based-scheduler-bert-checkpoint`; the Space downloads it with `huggingface_hub` when `BERT_DOWNLOAD_FROM_HF=true`.
-
-## Free deployment note
-
-This deployment-first setup uses a Hugging Face free CPU Docker Space. No paid Google or cloud billing is required for the public demo while Calendar creation is disabled.
-
-## AI/NLP Pipeline
-
-```text
-Voice / Audio / Text
-        |
-        v
-Whisper transcription
-        |
-        v
-Text cleanup + spaCy DATE/TIME/entity extraction
-        |
-        v
-Rule-based date/time/duration fallback parsing
-        |
-        v
-Fine-tuned BERT activity classification
-        |
-        v
-Editable event draft
-        |
-        v
-Google Calendar event after user confirmation
-```
-
-## Tech Stack
-
-- Backend: Python, FastAPI, Pydantic, PyTorch, transformers, openai-whisper, spaCy, python-dateutil, Google Calendar API
-- Frontend: React, TypeScript, Vite, Tailwind CSS, Framer Motion, lucide-react
-- Testing: pytest, FastAPI TestClient, TypeScript build
-
-## Folder Structure
-
-```text
-backend/     FastAPI API, AI services, calendar integration, tests
-frontend/    React + TypeScript scheduler UI
-LEGACY/      Original notebooks, PDF, checkpoint, and audio samples
-docs/        Architecture, model card, API reference, legacy notes
-```
-
-## Backend Setup
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m spacy download en_core_web_trf
-uvicorn app.main:app --reload
-```
-
-Whisper requires `ffmpeg` on the system path. On Debian/Ubuntu:
-
-```bash
-sudo apt-get install ffmpeg
-```
-
-## Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The app runs at `http://localhost:5173` and expects the backend at `http://localhost:8001` by default. Override the backend URL with `VITE_API_URL` if needed.
-
-## Google Calendar Setup
-
-This local/demo setup does not require Google Cloud billing. You only need a free Google Cloud project with the Calendar API enabled and an OAuth consent screen in Testing mode.
-
-1. Create a Google Cloud project.
-2. Enable **Google Calendar API**.
-3. Configure the OAuth consent screen:
-   - User type: **External**
-   - Publishing status: **Testing**
-   - Add your Google account under **Test users**
-4. Add these OAuth scopes:
-   - `https://www.googleapis.com/auth/calendar.events`
-   - `openid`
-   - `email`
-   - `profile`
-5. Create an OAuth 2.0 Client ID:
-   - Application type: **Web application**
-   - Authorized JavaScript origin: `http://localhost:5173`
-   - Authorized redirect URI: `http://localhost:8001/api/auth/google/callback`
-6. Copy `backend/.env.example` to `backend/.env`.
-7. Fill `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `GOOGLE_CALENDAR_SCOPES`, and `FRONTEND_URL`.
-8. Restart backend and frontend.
-9. Test sign in, switch account, logout, draft confirmation, and event creation.
-
-Do not commit `.env`, OAuth client secrets, local token files, credentials JSON, private keys, or service account files. The redirect URI in Google Cloud must exactly match `GOOGLE_REDIRECT_URI`; if the backend runs on `8001`, do not configure Google Cloud with `8000` unless the backend is actually running on `8000`.
-
-## Environment Variables
-
-See [backend/.env.example](backend/.env.example).
-
-Important defaults:
-
-- `APP_TIMEZONE=Asia/Jakarta`
-- `WHISPER_MODEL=base`
-- `BERT_CHECKPOINT_PATH=../LEGACY/last_trained_model_checkpoint.pth`
-- `FRONTEND_URL=http://localhost:5173`
-- `GOOGLE_REDIRECT_URI=http://localhost:8001/api/auth/google/callback`
-- `GOOGLE_CALENDAR_SCOPES=https://www.googleapis.com/auth/calendar.events,openid,email,profile`
-
-## Legacy Audio Testing
-
-After installing backend dependencies and `ffmpeg`, test audio scheduling with:
-
-```bash
-curl -F "file=@../LEGACY/ContentBased_audio_SRPreTrained_TEST.wav" \
-  http://localhost:8001/api/schedule-from-audio
-```
-
-The repository also includes `LEGACY/ContentBased_audio_SRPreTrained_TEST.mp3`.
-
-## API Summary
-
-- `GET /health`
-- `POST /api/transcribe`
-- `POST /api/analyze-text`
-- `POST /api/schedule-from-audio`
-- `GET /api/auth/google/start`
-- `GET /api/auth/google/callback`
-- `GET /api/auth/google/status`
-- `POST /api/auth/google/logout`
-- `POST /api/calendar/create-event`
-
-See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for request and response details.
-
-## Model Notes
-
-The legacy BERT notebook trained `bert-base-uncased` for five activity labels. The recovered inference label order is:
-
-```text
-career, education, health, hobby, social
-```
-
-The notebook reported weighted F1 of about `0.7606`. See [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
-
-## Known Limitations
-
-- Whisper requires local model download and `ffmpeg`.
-- `en_core_web_trf` is large and must be installed separately.
-- Whisper base and BERT run on CPU, so first load and transcription may be slow.
-- Hugging Face free Spaces may sleep and restart after inactivity.
-- The BERT checkpoint is large and must be uploaded to the separate Hugging Face model artifact repo before the Space can load it.
-- Google Calendar creation is disabled unless OAuth HTTPS callback configuration is added later.
-- Date/time extraction is conservative and intentionally asks users to confirm uncertain drafts.
-
-## Future Improvements
-
-- Add faster-whisper as an optional ASR backend.
-- Add persistent event history with SQLite/PostgreSQL.
-- Add timezone selection and recurring event support.
-- Add a dedicated Google disconnect route that revokes OAuth permission in addition to clearing the local token.
-- Add Playwright E2E tests.
-- Package production deployment with HTTPS OAuth callback support.
-
-## Credits
-
-Upgraded from the original college NLP AOL project by:
+This project was originally developed as an NLP AOL college project by:
 
 - Bintang Haidar Rabbani Pradipayasa
 - Michael Dimas Chrispradipta
 - Mousa Khalil Mousa Ayesh
+
+The original notebooks focused on:
+
+- Voice-based event creation.
+- Whisper transcription.
+- spaCy extraction of date/time/activity phrases.
+- Fine-tuned BERT activity classification.
+- Google Calendar scheduling.
+
+The upgraded application preserves the original NLP concept while improving the project into a maintainable full-stack web app with typed frontend code, API boundaries, model health reporting, OAuth flows, Docker deployment, and deployment-safe handling for large model artifacts.
+
+## Security and Privacy
+
+- OAuth credentials are loaded from backend environment variables.
+- Access and refresh tokens are stored locally under `backend/.tokens/` during development and are ignored by Git.
+- Calendar events are created only after the user reviews and confirms the draft.
+- The app requests `https://www.googleapis.com/auth/calendar.events` rather than broad Calendar account access.
+- `.env`, token JSON files, private keys, service account files, and model checkpoints are excluded from Git and Docker context.
+- Public demo deployments may run with Calendar creation disabled while preserving draft generation.
+
+## Known Limitations
+
+- Natural-language date/time extraction is conservative and may still require user edits.
+- Whisper transcription quality depends on audio clarity and language/accent conditions.
+- Whisper `base` and BERT run on CPU in the free Space, so cold starts and transcription can be slow.
+- Free Hugging Face Spaces may sleep after inactivity.
+- Google OAuth testing mode restricts sign-in to configured test users.
+- The BERT classifier reflects the labels and training data from the legacy notebook, so short or ambiguous activity phrases may be uncertain.
+- Recurring events, event update/delete, and persistent event history are not implemented yet.
+
+## Future Improvements
+
+- Recurring event support.
+- Timezone selector in the frontend.
+- Multilingual scheduling and language-aware transcription.
+- More robust duration and recurrence parsing.
+- Calendar event update/delete flows.
+- OAuth permission revocation/disconnect route.
+- Faster inference through model quantization or alternate ASR backends.
+- Persistent user/session storage.
+- Evaluation dashboard for extraction, transcription, and classification quality.
+- End-to-end browser tests for the deployed workflow.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+## Project Status
+
+Language Based Scheduler is a working AI prototype and portfolio project. It demonstrates a practical path from an experimental NLP notebook to a deployed full-stack application with real ML inference, editable user-facing workflows, and deployment-aware model artifact management.
